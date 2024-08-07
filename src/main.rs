@@ -61,7 +61,7 @@ fn run() -> anyhow::Result<ExitStatus> {
         writeln!(stdin, ")")?;
         writeln!(
             stdin,
-            "srun --ntasks=1 \"{}\" ${{INPUT[$SLURM_ARRAY_TASK_ID]}}",
+            "srun --ntasks=1 \"{}\" \"${{INPUT[$SLURM_ARRAY_TASK_ID]}}\"",
             args.command
         )?;
     } else {

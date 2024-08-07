@@ -8,6 +8,12 @@ struct Args {
     #[arg(long)]
     input: std::path::PathBuf,
     command: String,
+    #[arg(long)]
+    max_tasks: Option<String>,
+    #[arg(long)]
+    sbatch_path: Option<std::path::PathBuf>,
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    sbatch_args: Vec<String>,
 }
 
 fn main() -> std::process::ExitCode {
@@ -35,14 +41,19 @@ fn run() -> anyhow::Result<ExitStatus> {
         .map(|line| line.trim())
         .filter(|line| !line.is_empty())
         .collect::<Vec<_>>();
-    let mut sbatch = std::process::Command::new("sbatch")
-        .arg(format!("--array=0-{}", lines.len() - 1))
+    let mut sbatch = std::process::Command::new(args.sbatch_path.unwrap_or("sbatch".into()))
+        .arg(format!(
+            "--array=0-{}%{}",
+            lines.len() - 1,
+            args.max_tasks.unwrap_or("16".to_string())
+        ))
+        .args(args.sbatch_args)
         .stdin(std::process::Stdio::piped())
         .spawn()
         .context("Unable to invoke sbatch")?;
     if let Some(mut stdin) = sbatch.stdin.take() {
         writeln!(stdin, "#!/bin/bash")?;
-        writeln!(stdin, "export TMPDIR=/home/ssd/$USER/TEMP")?;
+        writeln!(stdin, "export TMPDIR=/ssd/home/$USER/TEMP")?;
         write!(stdin, "INPUT=(")?;
         for line in lines {
             write!(stdin, "\"{line}\" ")?;
@@ -50,7 +61,7 @@ fn run() -> anyhow::Result<ExitStatus> {
         writeln!(stdin, ")")?;
         writeln!(
             stdin,
-            "srun \"{}\" \"INPUT[$SLURM_ARRAY_TASK_ID]\"",
+            "srun --ntasks=1 \"{}\" ${{INPUT[$SLURM_ARRAY_TASK_ID]}}",
             args.command
         )?;
     } else {

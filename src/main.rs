@@ -3,7 +3,7 @@ use clap::Parser;
 use std::{io::Write, process::ExitStatus};
 
 #[derive(Parser)]
-#[command(version = option_env!("IHN_SBATCH_JOB_ARRAY").unwrap_or("debug"))]
+#[command(version = option_env!("IHN_SBATCH_JOB_ARRAY_VERSION").unwrap_or("debug"))]
 struct Args {
     #[arg(long)]
     input: std::path::PathBuf,

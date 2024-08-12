@@ -19,10 +19,11 @@ struct Args {
 fn main() -> std::process::ExitCode {
     match run() {
         Ok(status) => {
-            if let Some(code) = status.code() {
-                std::process::ExitCode::from(code.try_into().unwrap_or(0))
-            } else {
+            if status.success() {
                 std::process::ExitCode::SUCCESS
+            } else {
+                eprintln!("ERROR: Something went wrong...");
+                std::process::ExitCode::FAILURE
             }
         }
         Err(what) => {

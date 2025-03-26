@@ -54,7 +54,9 @@ fn run() -> anyhow::Result<ExitStatus> {
         .context("Unable to invoke sbatch")?;
     if let Some(mut stdin) = sbatch.stdin.take() {
         writeln!(stdin, "#!/bin/bash")?;
+        writeln!(stdin, "set -u")?;
         writeln!(stdin, "export TMPDIR=/ssd/home/$USER/TEMP")?;
+        writeln!(stdin, "export REGISTRY_AUTH_FILE=/mnt/apps/etc/auth.json")?;
         write!(stdin, "INPUT=(")?;
         for line in lines {
             write!(stdin, "\"{line}\" ")?;
